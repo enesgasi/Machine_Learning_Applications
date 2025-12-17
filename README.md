@@ -1,6 +1,6 @@
 # Machine Learning Applications
 
-Vize sonrası 8. haftadan itibaren başlıyor.
+Vize sonrası 8. dersten itibaren başlıyor.
 
 ## Lecture 1
 
