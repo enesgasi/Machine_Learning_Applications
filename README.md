@@ -3,8 +3,10 @@
 Vize sonrası 8. dersten itibaren başlıyor.
 
 ## Lecture 1
+Course info
 
 ## Lecture 2
+
 
 ## Lecture 3
 

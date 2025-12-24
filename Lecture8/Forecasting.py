@@ -11,6 +11,8 @@ data=quotes[['Date','Close']]
 data.index = pd.to_datetime(data['Date'], format='%Y-%m-%d')
 del data['Date']
 
+print(data.head())
+
 all_s=data.describe()
 print(all_s)
 
