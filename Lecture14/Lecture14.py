@@ -1,3 +1,5 @@
+#BU KODA ÇOK GÜVENMEYİN, HOCANIN YAZDIĞI KOD DEĞİL
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -5,10 +7,12 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+
 df = pd.read_csv("carbon.csv")
 
 X = df[['Volume', 'Weight']]
 y = df['CO2']
+
 
 from sklearn.model_selection import train_test_split
 
@@ -29,7 +33,7 @@ model = Sequential()
 
 model.add(Dense(256, activation='relu', input_shape=(2,)))
 model.add(Dense(256, activation='relu'))
-model.add(Dense(1))  # regression → tek nöron
+model.add(Dense(1))  
 
 model.compile(
     optimizer='adam',
