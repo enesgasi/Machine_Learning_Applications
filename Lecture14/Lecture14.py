@@ -1,4 +1,4 @@
-#BU KODA ÇOK GÜVENMEYİN, HOCANIN YAZDIĞI KOD DEĞİL
+#BU KODA ÇOK GÜVENMEYİN, HOCANIN YAZDIĞI KOD DEĞİL      NOT: AMA ÇALIŞIYOR :)))))))
 
 import pandas as pd
 import numpy as np
