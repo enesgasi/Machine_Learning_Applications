@@ -1,43 +1,61 @@
-# Machine Learning Applications
+# Machine Learning Applications - Lecture Notes
 
-Vize sonrası 8. dersten itibaren başlıyor.
+Machine Learning dersi ders notları ve Python implementasyonları.
 
-## Lecture 1
-Course info
+**Not:** Vize sonrası, Lecture 8'den itibaren içerik mevcut.
 
-## Lecture 2
-Introduction to Machine Learning
+## Lecture İçerikleri
 
-## Lecture 3
-Python basics
+### [Lecture 1](Lecture1/) - Derse Giriş
+ML temel kavramları, kurs yapısı
 
-## Lecture 4
-Supervised learning
+### [Lecture 2](Lecture2/) - Introduction to Machine Learning
+Supervised/Unsupervised/Reinforcement Learning, veri tipleri
 
-## Lecture 5
-Support Vector Machines
+### [Lecture 3](Lecture3/) - Regression
+Linear Regression, Model evaluation (MSE, RMSE, R²)
 
-## Lecture 6
-Kmeans, K nearest Neighbors
+### [Lecture 4](Lecture4/) - Supervised Learning
+Logistic Regression, Naive Bayes, Accuracy/Precision/Recall/F1-Score
 
-## Lecture 7
-Neural Networks
+### [Lecture 5](Lecture5/) - Decision Trees
+Decision Tree Classifier, Gini Index, Graphviz görselleştirme
 
-## Lecture 8
-Time Series and Forecasting
+### [Lecture 6](Lecture6/) - Clustering & KNN
+K-Means (Elbow method), K-Nearest Neighbors
 
-## Lecture 9
-Audio Processing
+### [Lecture 7](Lecture7/) - Neural Networks
+Gradient descent, Keras ile Deep Learning (taksi ücreti tahmini)
 
-## Lecture 10
-Natural Language Processing
+### [Lecture 8](Lecture8/) - Time Series ⭐
+ARMA, ARIMA, SARIMA modelleri, IBM hisse tahmini
 
-## Lecture 11
-Genetic Algorithms
+### [Lecture 9](Lecture9/) - Audio Processing
+Ses işleme, sinüzoidal ses üretimi, Text-to-Speech
 
-## Lecture 12
-Reinforcement Learning
+### [Lecture 10](Lecture10/) - NLP
+Tokenization, Stemming, Lemmatization, Bag of Words
 
-## Lecture 13
-Computer vision and image processing
+### [Lecture 11](Lecture11/) - Genetic Algorithms
+Evolution, Selection, Crossover, Mutation
 
+### [Lecture 12](Lecture12/) - Reinforcement Learning
+Q-Learning, Bellman Equation, TD Learning
+
+### [Lecture 13](Lecture13/) - Computer Vision
+OpenCV, görüntü işleme, Edge Detection, Contour Detection
+
+### [Lecture 14](Lecture14/) - Deep Learning Applications
+Neural Network ile CO2 tahmini, Speech Recognition + NLP
+
+## Kurulum
+
+```bash
+pip install numpy pandas matplotlib seaborn scikit-learn
+pip install tensorflow keras statsmodels nltk scipy opencv-python
+pip install SpeechRecognition pyttsx3 pydotplus
+```
+
+---
+
+Her lecture klasöründe detaylı README ve PDF notları bulunur.
