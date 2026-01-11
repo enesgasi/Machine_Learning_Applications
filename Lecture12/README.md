@@ -37,18 +37,24 @@ Bu script, basit bir zincir state sistemi için Q-Learning algoritmasını simü
 
 #### Problem Yapısı
 
+**Ne Öğrenmeye Çalışıyoruz?**
+Agent'ın her state'ten başladığında "buradan ne kadar toplam ödül alabilirim?" sorusunun cevabını öğrenmesi gerekiyor. Bu değerlere **Q-değerleri** diyoruz.
+
 **4 State Zinciri:**
 ```
 State 0 → State 1 → State 2 → State 3 (Terminal)
 r=-2.0    r=4.0      r=1.0
 ```
 
-- State 0'dan State 1'e geçiş: Reward = -2.0
-- State 1'den State 2'ye geçiş: Reward = 4.0
-- State 2'den State 3'e geçiş: Reward = 1.0
-- State 3: Terminal state (bitiş)
+**Geçişler:**
+- State 0 → State 1: Reward = -2.0 (kötü bir adım, ceza)
+- State 1 → State 2: Reward = +4.0 (iyi bir adım, büyük ödül!)
+- State 2 → State 3: Reward = +1.0 (küçük ödül)
+- State 3: Terminal state (oyun biter)
 
-#### Parametreler
+**Mantık:** Agent başlangıçta Q-değerlerini bilmiyor. Deneme-yanılma ile öğrenecek.
+
+#### Parametreler - Öğrenmeyi Kontrol Eden Değerler
 
 ```python
 gamma = 0.5        # Discount factor (gelecek ödüllerinin değeri)
@@ -56,8 +62,14 @@ alpha = 0.3        # Learning rate (öğrenme hızı)
 n = 4              # State sayısı
 r_list = [-2.0, 4.0, 1.0]  # Reward'lar
 epochs = 25        # Kaç iterasyon
-q_original = [1, 2, 8]  # Başlangıç Q-değerleri
+q_original = [1, 2, 8]  # Başlangıç Q-değerleri (rastgele tahminler)
 ```
+
+**Neden Bu Parametreler?**
+- **gamma**: Agent ne kadar ileriyi düşünsün? (gelecek önemli mi?)
+- **alpha**: Yeni bilgiyi ne kadar hızlı öğrensin? (hata düzeltme hızı)
+- **epochs**: Kaç kez tekrar ederek öğrensin? (pratik sayısı)
+- **q_original**: Başta yanlış tahminlerle başlıyoruz, algoritma bunları düzeltecek
 
 **Parametrelerin Anlamları:**
 
@@ -117,15 +129,21 @@ Q_new = 5 + 0.3×9 = 5 + 2.7 = 7.7
 Q_new = 5 + 1.0×9 = 5 + 9 = 14
 ```
 
-#### True Q-Values Hesaplama
+#### True Q-Values Hesaplama (Hedef Değerler)
+
+**Neden Hesaplıyoruz?**
+Algoritmanın doğru çalışıp çalışmadığını kontrol etmek için. Q-Learning'in ulaşması gereken **hedef değerleri** analitik olarak hesaplayacağız.
+
+**Nasıl Hesaplıyoruz?**
+Terminal state'ten (sonda) geriye doğru, her state'in değerini hesaplıyoruz.
 
 ```python
 true_q = np.zeros(n-1)  # [0, 0, 0] başlangıç
-cur = 0
+cur = 0  # Terminal state'in değeri
 
 for j in range(len(true_q)-1, -1, -1):  # Geriye doğru: 2, 1, 0
-    true_q[j] = r_list[j] + gamma * cur
-    cur = true_q[j]
+    true_q[j] = r_list[j] + gamma * cur  # Bellman denklemi
+    cur = true_q[j]  # Bir sonraki iterasyon için sakla
 ```
 
 **Adım Adım Hesaplama:**
@@ -159,99 +177,126 @@ true_q[0] = r_list[0] + gamma × cur
 cur = 0.25
 ```
 
-**Final true_q:**
+**Sonuç - True Q-Values:**
 ```python
 true_q = [0.25, 4.5, 1.0]
 ```
 
-**Yorumlama:**
-- **State 0**: 0.25 beklenen toplam reward
-- **State 1**: 4.5 beklenen toplam reward (en iyi!)
-- **State 2**: 1.0 beklenen toplam reward
-- **State 3**: 0.0 (terminal, daha ödül yok)
+**Yorumlama (Hedef Değerler):**
+- **State 0**: Buradan başlarsam toplam 0.25 kazanırım
+- **State 1**: Buradan başlarsam toplam 4.5 kazanırım (EN İYİ STATE!)
+- **State 2**: Buradan başlarsam toplam 1.0 kazanırım
+- **State 3**: Terminal, daha kazanç yok (0.0)
 
-Bu, **optimal policy** altında her state'ten elde edilecek toplam reward'dur.
+**Önemli:** Q-Learning algoritması bu değerlere yakınsamaya çalışacak. Bu bizim **başarı ölçütümüz**.
 
-#### Q-Table Başlatma
+#### Q-Table Başlatma (Öğrenme Defteri)
+
+**Ne İçin?**
+Her epoch'ta Q-değerlerinin nasıl değiştiğini kaydetmek için bir tablo oluşturuyoruz.
 
 ```python
-q_table = np.zeros([epochs, n])  # (25, 4) matris
+q_table = np.zeros([epochs, n])  # (25, 4) matris - tüm epochlar için
 
 for j in range(n-1):
-    q_table[0, j] = q_original[j]  # İlk satır: [1, 2, 8, 0]
+    q_table[0, j] = q_original[j]  # İlk satır: [1, 2, 8, 0] (yanlış tahminler)
 ```
 
 **Q-Table Yapısı:**
 ```
          State0  State1  State2  State3
-Epoch 0:   1       2       8       0
-Epoch 1:   ?       ?       ?       0
-Epoch 2:   ?       ?       ?       0
+Epoch 0:   1       2       8       0    ← Başlangıç (yanlış tahminler)
+Epoch 1:   ?       ?       ?       0    ← Öğrenmeye başladık
+Epoch 2:   ?       ?       ?       0    ← Daha iyi tahminler
 ...
-Epoch 24:  ?       ?       ?       0
+Epoch 24:  0.25    4.5     1.0     0    ← Hedef: true_q'ya yakınsadık
 ```
 
-- Her satır bir epoch
-- Her sütun bir state'in Q-değeri
-- State 3 (terminal) her zaman 0
+**Mantık:** Yanlış başlayıp doğruyu öğreneceğiz.
 
-#### Q-Learning Update Loop
+#### Q-Learning Update Loop (Öğrenme Süreci)
+
+**Ne Yapıyoruz?**
+Her epoch'ta tüm state'ler için Q-değerlerini güncelliyoruz. Yanlış tahminleri düzeltiyoruz.
 
 ```python
-for x0 in range(1, epochs):  # Epoch 1'den 24'e kadar
-    for x1 in range(n-1):    # State 0, 1, 2 için
-        # TD (Temporal Difference) Error hesapla
+for x0 in range(1, epochs):  # Her epoch için (1'den 24'e)
+    for x1 in range(n-1):    # Her state için (0, 1, 2)
+        # 1) Hata hesapla: "Ne kadar yanıldık?"
         learned = r_list[x1] + gamma * q_table[x0-1, x1+1] - q_table[x0-1, x1]
+        #         └─ reward    └─ gelecek değeri     └─ şimdiki tahmin
         
-        # Q-value güncelle
+        # 2) Hatayı düzelt: "Yeni değer = Eski değer + Düzeltme"
         q_table[x0, x1] = q_table[x0-1, x1] + alpha * learned
 ```
 
-**TD Update Formülü:**
+**Güncelleme Formülü:**
 ```
-Q(s_t) ← Q(s_t) + α × [r_t + γ×Q(s_{t+1}) - Q(s_t)]
-                      └─────────────────────────┘
-                           TD Error (learned)
+Q_yeni = Q_eski + α × [Hedef - Q_eski]
+                      └───────────────┘
+                         Hata (learned)
+
+Hedef = r + γ×Q(sonraki_state)
 ```
 
-**Bileşenler:**
-- **r_t**: Şimdiki reward
-- **γ×Q(s_{t+1})**: Discounted gelecek değer
-- **Q(s_t)**: Şimdiki tahmin
-- **TD Error**: Ne kadar yanıldık?
+**Mantık:**
+1. **Hedef hesapla**: Bu state'in değeri ne olmalı? → r + γ×Q(s')
+2. **Hata bul**: Tahminimiz hedefe ne kadar uzak? → Hedef - Q_eski
+3. **Düzelt**: Hatanın bir kısmını (α kadar) düzelt → Q_eski + α×Hata
 
-#### Örnek Hesaplama (Epoch 1, State 0)
+#### Örnek Hesaplama - İlk Düzeltme (Epoch 1, State 0)
 
-**Başlangıç:**
+**Durum:**
 ```python
-x0 = 1, x1 = 0
-q_table[0] = [1, 2, 8, 0]  # Önceki epoch
-r_list[0] = -2.0
-gamma = 0.5
-alpha = 0.3
+Epoch 0 (başlangıç): q_table[0] = [1, 2, 8, 0]  # Yanlış tahminler
+
+Şimdi State 0'ın değerini düzelteceğiz.
+
+Bilgilerimiz:
+- Mevcut tahmin: Q(State 0) = 1
+- State 0'dan sonra State 1'e gidiyoruz, Q(State 1) = 2
+- State 0→1 geçişinde reward: r = -2.0
+- gamma = 0.5, alpha = 0.3
 ```
 
-**Step 1: TD Error**
+**Adım 1: Hedef değer ne olmalı?**
 ```python
-learned = r_list[0] + gamma × q_table[0, 1] - q_table[0, 0]
-        = -2.0 + 0.5 × 2 - 1
-        = -2.0 + 1.0 - 1
-        = -2.0
+Hedef = r + γ × Q(sonraki_state)
+      = -2.0 + 0.5 × 2
+      = -2.0 + 1.0
+      = -1.0
+
+Yorum: State 0'dan -2.0 ceza alıp, State 1'in değerini (2) yarı fiyatına (1.0) ekleyince
+       toplam beklenen değer -1.0 olmalı.
 ```
 
-**Step 2: Q Update**
+**Adım 2: Hata ne kadar?**
 ```python
-q_table[1, 0] = q_table[0, 0] + alpha × learned
-              = 1 + 0.3 × (-2.0)
-              = 1 - 0.6
-              = 0.4
+Hata (learned) = Hedef - Mevcut
+               = -1.0 - 1
+               = -2.0
+
+Yorum: Tahminimiz (1) çok yüksek, -1.0 olmalıydı. 2 birim hata var.
 ```
 
-**Yeni Q-Table:**
+**Adım 3: Düzelt**
+```python
+Q_yeni = Q_eski + α × Hata
+       = 1 + 0.3 × (-2.0)
+       = 1 - 0.6
+       = 0.4
+
+Yorum: Hatanın %30'unu (alpha=0.3) düzelttik. 1'den 0.4'e indirdik.
+       Hedefe (−1.0) doğru ilerliyoruz ama henüz ulaşmadık.
+```
+
+**Sonuç:**
 ```
          State0  State1  State2  State3
-Epoch 0:   1       2       8       0
-Epoch 1:  0.4      ?       ?       0
+Epoch 0:   1       2       8       0    ← Eski (yanlış)
+Epoch 1:  0.4      ?       ?       0    ← Yeni (daha iyi, ama henüz hedefte değil)
+
+Hedef:    0.25    4.5     1.0     0    ← Ulaşmamız gereken (true_q)
 ```
 
 #### Epoch 1 Tüm State'ler
@@ -273,27 +318,32 @@ q_table[1, 2] = 8 + 0.3 × (-7.0) = 8 - 2.1 = 5.9
 q_table[1] = [0.4, 3.8, 5.9, 0]
 ```
 
-#### Convergence (Yakınsama)
+#### Convergence (Yakınsama) - Öğrenme Süreci
 
-25 epoch boyunca bu işlem tekrar eder:
+**Ne Oluyor?**
+25 epoch boyunca her state için Q-değerleri sürekli düzeltiliyor. Yanlış tahminlerden doğru değerlere doğru ilerliyoruz.
 
-**İlk Epochlar:**
+**Öğrenme Süreci:**
 ```
-Epoch 0:  [1.0,  2.0,  8.0,  0]
-Epoch 1:  [0.4,  3.8,  5.9,  0]
-Epoch 2:  [0.1,  4.2,  4.7,  0]
-Epoch 3:  [0.1,  4.4,  3.7,  0]
+Epoch 0:  [1.0,  2.0,  8.0,  0]  ← Başlangıç (rastgele, çok yanlış)
+Epoch 1:  [0.4,  3.8,  5.9,  0]  ← İlk düzeltmeler
+Epoch 2:  [0.1,  4.2,  4.7,  0]  ← Hedefe yaklaşıyoruz
+Epoch 3:  [0.1,  4.4,  3.7,  0]  ← Daha da yakın
 ...
+Epoch 22: [0.25, 4.49, 1.01, 0]  ← Neredeyse hedefteyiz
+Epoch 23: [0.25, 4.50, 1.00, 0]  ← Çok yakın
+Epoch 24: [0.25, 4.50, 1.00, 0]  ← Yakınsadık! Artık değişmiyor
+
+Hedef:    [0.25, 4.5,  1.0,  0]  ← true_q (optimal değerler)
 ```
 
-**Son Epochlar:**
-```
-Epoch 22: [0.25, 4.49, 1.01, 0]
-Epoch 23: [0.25, 4.50, 1.00, 0]
-Epoch 24: [0.25, 4.50, 1.00, 0]
-```
+**Gözlemler:**
+- **State 0**: 1.0 → 0.25 (aşağı indi, başta fazla tahmin etmiştik)
+- **State 1**: 2.0 → 4.5 (yukarı çıktı, başta az tahmin etmiştik)
+- **State 2**: 8.0 → 1.0 (çok aşağı düştü, başta çok yanlıştı)
+- **Epoch 15'ten sonra**: Değişim minimal, öğrenme tamamlandı
 
-**true_q = [0.25, 4.5, 1.0]** → **Yakınsama başarılı!**
+**Sonuç:** Q-Learning başarıyla optimal değerleri öğrendi!
 
 #### Görselleştirme
 
